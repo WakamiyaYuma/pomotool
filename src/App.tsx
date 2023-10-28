@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback} from 'react';
+import React, { useState, useEffect, useRef,useCallback} from 'react';
 import { Helmet } from 'react-helmet';
 import {
 	Button,
@@ -194,13 +194,13 @@ const App: React.FC = () => {
 	const getBackgroundColor = useCallback(() => {
 		switch (timerState) {
 			case TimerState.WORK:
-				return '#008000'; // 緑色
+				return '#38b48b'; // 緑色
 			case TimerState.BREAK:
-				return '#0000FF'; // 青色
+				return '#f7c114'; // 青色
 			case TimerState.PAUSED:
-				return '#FF0000'; // 赤色
+				return '#ee7800'; // 赤色
 			default:
-				return '#FFFFFF'; // 白色
+				return '#17184b'; // 紺色
 		}
 	}, [timerState]);
 
