@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback} from 'react';
 import { Helmet } from 'react-helmet';
 import {
 	Button,
@@ -191,7 +191,7 @@ const App: React.FC = () => {
 	const [theme, setTheme] = useState<Theme | null>(null);
 
 	// タイマーの状態に応じた背景色を返す
-	const getBackgroundColor = () => {
+	const getBackgroundColor = useCallback(() => {
 		switch (timerState) {
 			case TimerState.WORK:
 				return '#008000'; // 緑色
@@ -202,7 +202,7 @@ const App: React.FC = () => {
 			default:
 				return '#FFFFFF'; // 白色
 		}
-	};
+	}, [timerState]);
 
 	useEffect(() => {
 		const backgroundColor = getBackgroundColor();
@@ -214,7 +214,7 @@ const App: React.FC = () => {
 			},
 		});
 		setTheme(newTheme);
-	}, [timerState]); // timerStateが変わるたびにテーマを更新
+	}, [timerState, getBackgroundColor]);
 
 	return (
           <ThemeProvider theme={theme ? theme : createTheme()}>
