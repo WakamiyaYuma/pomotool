@@ -221,7 +221,7 @@ const App: React.FC = () => {
                                                   onChange={handleFileSelection}
                                                   style={{ display: 'none' }}
                                              />
-                                             <Button variant="contained" onClick={handleFileButtonClick}  style={{ width: '100%', height: '56px' }}>
+                                             <Button variant="outlined" onClick={handleFileButtonClick}  style={{ width: '100%', height: '56px' }}>
                                                   {selectedFileName}
                                              </Button>
                                         </Grid>
@@ -238,7 +238,7 @@ const App: React.FC = () => {
                                    </Stack>
                               </Grid>
                               <Grid item xs={6}>
-                                   <Button variant="contained" onClick={toggleFullScreen} style={{ width: '100%', height: '56px' }}>
+                                   <Button variant="outlined" onClick={toggleFullScreen} style={{ width: '100%', height: '56px' }}>
                                         {isFullScreen ? '全画面解除' : '全画面表示'}
                                    </Button>
                               </Grid>
