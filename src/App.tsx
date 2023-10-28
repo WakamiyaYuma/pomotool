@@ -159,12 +159,12 @@ const App: React.FC = () => {
 	return (
 		<Grid container justifyContent="center" alignItems="center" style={{ minHeight: '100vh', padding: '1em' }}>
                <Helmet>
-                    <title>作業タイマーアプリ | 合同会社Fly Tree</title>
+                    <title>ポモドーロ-作業タイマーアプリ</title>
                     <meta name="description" content="効率的に作業と休憩を切り替えるためのタイマーアプリです。" />
                     <meta name="keywords" content="タイマー, 作業, 休憩, Pomodoro" />
                     <meta name="author" content="Wakamiya Yuma from LLC. Fly Tree" />
                     <link rel="canonical" href="https://pomo.fly-tree.com/" />
-                    <meta property="og:title" content="作業タイマーアプリ | 合同会社Fly Tree" />
+                    <meta property="og:title" content="ポモドーロ-作業タイマーアプリ" />
                     <meta property="og:description" content="効率的に作業と休憩を切り替えるためのタイマーアプリです。" />
                     <meta property="og:type" content="website" />
                     <meta property="og:url" content="https://pomo.fly-tree.com/" />
@@ -173,7 +173,7 @@ const App: React.FC = () => {
                     <meta property="og:site_name" content="合同会社Fly Tree" />
                     <meta name="twitter:card" content="summary_large_image" />
                     <meta name="twitter:site" content="@FlyTree" />
-                    <meta name="twitter:title" content="作業タイマーアプリ | 合同会社Fly Tree" />
+                    <meta name="twitter:title" content="ポモドーロ-作業タイマーアプリ" />
                     <meta name="twitter:description" content="効率的に作業と休憩を切り替えるためのタイマーアプリです。" />
                     <meta name="twitter:image" content="https://pomo.fly-tree.com/snsimage.png" />
                     <meta name="robots" content="index, follow" />
