@@ -11,7 +11,10 @@ import {
 	InputLabel,
 	Grid,
 	Slider,
-	Stack
+	Stack,
+     Theme,
+     ThemeProvider, 
+     createTheme
 } from '@mui/material';
 import { VolumeDown, VolumeUp } from '@mui/icons-material';
 import { SelectChangeEvent } from '@mui/material/Select';
@@ -25,13 +28,12 @@ enum TimerState {
 
 const App: React.FC = () => {
      // 定数とリファレンスの設定
-     const initialWorkTime = 1500;
-     const initialBreakTime = 300;
+	const initialWorkTime = parseInt(localStorage.getItem('workTime') || '1500');
+	const initialBreakTime = parseInt(localStorage.getItem('breakTime') || '300');
      const initialVolume = parseFloat(localStorage.getItem('volume') || '1');
      const initialAudio = localStorage.getItem('audio') || 'default1';
      const audioOptions: { [key: string]: string } = {
           default1: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3',
-          default2: 'https://example.com/default2.mp3'
      };
 
      const workAudioRef = useRef(new Audio(audioOptions.default1));
@@ -76,19 +78,35 @@ const App: React.FC = () => {
 		setTimerState(TimerState.WORK);
 	};
 
-	// 作業時間の変更
-	const handleWorkTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = parseInt(e.target.value) * 60;
-		setWorkTime(value);
-		localStorage.setItem('workTime', value.toString());
-	};
+     // 作業時間の変更
+     const handleWorkTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          const value = parseInt(e.target.value);
+          if (value < 1) {
+               // マイナスの場合、何もしないか、デフォルト値を使用
+               return;
+          }
+          const calculatedValue = value * 60;
+          setWorkTime(calculatedValue);
+          localStorage.setItem('workTime', calculatedValue.toString());
+          if (!intervalId) {
+               setSeconds(calculatedValue);
+          }
+     };
 
-	// 休憩時間の変更
-	const handleBreakTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = parseInt(e.target.value) * 60;
-		setBreakTime(value);
-		localStorage.setItem('breakTime', value.toString());
-	};
+     // 休憩時間の変更
+     const handleBreakTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          const value = parseInt(e.target.value);
+          if (value < 1) {
+               // マイナスの場合、何もしないか、デフォルト値を使用
+               return;
+          }
+          const calculatedValue = value * 60;
+          setBreakTime(calculatedValue);
+          localStorage.setItem('breakTime', calculatedValue.toString());
+          if (!intervalId && timerState === TimerState.BREAK) {
+               setSeconds(calculatedValue);
+          }
+     };
 
 	// 音声オプションの変更
 	const handleAudioChange = (e: SelectChangeEvent<string>) => {
@@ -156,7 +174,50 @@ const App: React.FC = () => {
           }
      };
 
+     //状態管理
+     const renderTimerState = () => {
+		switch (timerState) {
+			case TimerState.WORK:
+				return "作業中";
+			case TimerState.BREAK:
+				return "休憩中";
+			case TimerState.PAUSED:
+				return "一時停止中";
+			default:
+				return "";
+		}
+	};
+
+	const [theme, setTheme] = useState<Theme | null>(null);
+
+	// タイマーの状態に応じた背景色を返す
+	const getBackgroundColor = () => {
+		switch (timerState) {
+			case TimerState.WORK:
+				return '#008000'; // 緑色
+			case TimerState.BREAK:
+				return '#0000FF'; // 青色
+			case TimerState.PAUSED:
+				return '#FF0000'; // 赤色
+			default:
+				return '#FFFFFF'; // 白色
+		}
+	};
+
+	useEffect(() => {
+		const backgroundColor = getBackgroundColor();
+		const newTheme = createTheme({
+			palette: {
+				primary: {
+					main: backgroundColor,
+				},
+			},
+		});
+		setTheme(newTheme);
+	}, [timerState]); // timerStateが変わるたびにテーマを更新
+
 	return (
+          <ThemeProvider theme={theme ? theme : createTheme()}>
 		<Grid container justifyContent="center" alignItems="center" style={{ minHeight: '100vh', padding: '1em' }}>
                <Helmet>
                     <title>ポモドーロ-作業タイマーアプリ</title>
@@ -179,11 +240,13 @@ const App: React.FC = () => {
                     <meta name="robots" content="index, follow" />
                     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                </Helmet>
-
                     <Grid item xs={12} sm={8} md={6}>
                          <Paper elevation={3} style={{ padding: '2em', textAlign: 'center' }}>
                               <Typography variant="h1" style={{fontSize:'calc(10vw + 5rem)'}}>
                                    {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
+                              </Typography>
+                              <Typography variant="h4" style={{ color: getBackgroundColor() }}>
+                                   {renderTimerState()}
                               </Typography>
                               <Grid container spacing={3} justifyContent="center" style={{ marginTop: '1em' }}>
                                    <Grid item xs={6}>
@@ -208,8 +271,7 @@ const App: React.FC = () => {
                                         <FormControl fullWidth>
                                              <InputLabel>プリセットサウンド</InputLabel>
                                              <Select value={audioOption} onChange={handleAudioChange} fullWidth>
-                                                  <MenuItem value="default1">デフォルト1</MenuItem>
-                                                  <MenuItem value="default2">デフォルト2</MenuItem>
+                                                  <MenuItem value="default1">デフォルト</MenuItem>
                                              </Select>
                                         </FormControl>
                                    </Grid>
@@ -254,6 +316,7 @@ const App: React.FC = () => {
                     </Paper>
                </Grid>
           </Grid>
+     </ThemeProvider>
      );
           }
           
