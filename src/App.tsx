@@ -23,7 +23,8 @@ import { SelectChangeEvent } from '@mui/material/Select';
 enum TimerState {
 	WORK,
 	BREAK,
-	PAUSED
+	PAUSED,
+     LONG_BREAK
 }
 
 const App: React.FC = () => {
@@ -37,11 +38,15 @@ const App: React.FC = () => {
      };
 
      const workAudioRef = useRef(new Audio(audioOptions.default1));
-     const breakAudioRef = useRef(new Audio(audioOptions.default2));
+     const breakAudioRef = useRef(new Audio(audioOptions.default1));
      const audioRef = useRef(new Audio(audioOptions[initialAudio] || initialAudio));
 
 
 	// 状態の初期化
+	const initialCompletedCycles = parseInt(localStorage.getItem('completedCycles') || '0');
+	const [longBreakTime, setLongBreakTime] = useState<number>(parseInt(localStorage.getItem('longBreakTime') || '900'));
+	const [longBreakInterval, setLongBreakInterval] = useState<number>(parseInt(localStorage.getItem('longBreakInterval') || '4'));
+	const [completedCycles, setCompletedCycles] = useState<number>(initialCompletedCycles);
 	const [seconds, setSeconds] = useState<number>(initialWorkTime);
 	const [workTime, setWorkTime] = useState<number>(initialWorkTime);
 	const [breakTime, setBreakTime] = useState<number>(initialBreakTime);
@@ -108,6 +113,27 @@ const App: React.FC = () => {
           }
      };
 
+     // 長時間休憩の時間を変更
+     const handleLongBreakTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          const value = parseInt(e.target.value);
+          if (value < 1) {
+               return;
+          }
+          const calculatedValue = value * 60;
+          setLongBreakTime(calculatedValue);
+          localStorage.setItem('longBreakTime', calculatedValue.toString());
+     };
+
+     // 長時間休憩のインターバルを変更
+     const handleLongBreakIntervalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          const value = parseInt(e.target.value);
+          if (value < 1) {
+               return;
+          }
+          setLongBreakInterval(value);
+          localStorage.setItem('longBreakInterval', value.toString());
+     };
+
 	// 音声オプションの変更
 	const handleAudioChange = (e: SelectChangeEvent<string>) => {
 		const value = e.target.value;
@@ -150,14 +176,46 @@ const App: React.FC = () => {
 	// タイマーの残り時間が変わったときの処理
 	useEffect(() => {
 		if (seconds <= 0) {
-			const audioRefCurrent = timerState === TimerState.WORK ? workAudioRef.current : breakAudioRef.current;
-			audioRefCurrent.volume = volume;
-			audioRefCurrent.play();
+			let audioRefCurrent;
+			switch (timerState) {
+				case TimerState.WORK:
+					audioRefCurrent = workAudioRef.current;
+					break;
+				case TimerState.BREAK:
+					audioRefCurrent = breakAudioRef.current;
+					break;
+				case TimerState.LONG_BREAK:
+					audioRefCurrent = breakAudioRef.current;
+					break;
+				default:
+					audioRefCurrent = null;
+			}
 
-			setSeconds(timerState === TimerState.WORK ? breakTime : workTime);
-			setTimerState(timerState === TimerState.WORK ? TimerState.BREAK : TimerState.WORK);
+			if (audioRefCurrent) {
+				audioRefCurrent.volume = volume;
+				audioRefCurrent.play();
+			}
+
+			if (timerState === TimerState.WORK) {
+				setCompletedCycles(prevCycles => prevCycles + 1);
+				if (completedCycles >= longBreakInterval) {
+					setSeconds(longBreakTime);
+					setTimerState(TimerState.LONG_BREAK); // 状態を長期休憩に
+					setCompletedCycles(1); // サイクルのリセット
+				} else {
+					setSeconds(breakTime);
+					setTimerState(TimerState.BREAK);
+				}
+			} else if (timerState === TimerState.LONG_BREAK) {
+				setSeconds(workTime);
+				setTimerState(TimerState.WORK);
+			} else {
+				setSeconds(workTime);
+				setTimerState(TimerState.WORK);
+			}
 		}
-	}, [seconds, timerState, workTime, breakTime, volume]);
+	}, [seconds, timerState, workTime, breakTime, volume, longBreakTime, longBreakInterval, completedCycles]);
+
 
      const handleFileButtonClick = () => {
           if (fileInputRef.current) {
@@ -174,8 +232,7 @@ const App: React.FC = () => {
           }
      };
 
-     //状態管理
-     const renderTimerState = () => {
+	const renderTimerState = () => {
 		switch (timerState) {
 			case TimerState.WORK:
 				return "作業中";
@@ -183,14 +240,13 @@ const App: React.FC = () => {
 				return "休憩中";
 			case TimerState.PAUSED:
 				return "一時停止中";
+			case TimerState.LONG_BREAK:  
+				return "長期休憩中";
 			default:
 				return "";
 		}
 	};
 
-	const [theme, setTheme] = useState<Theme | null>(null);
-
-	// タイマーの状態に応じた背景色を返す
 	const getBackgroundColor = useCallback(() => {
 		switch (timerState) {
 			case TimerState.WORK:
@@ -199,10 +255,15 @@ const App: React.FC = () => {
 				return '#f7c114'; // 青色
 			case TimerState.PAUSED:
 				return '#ee7800'; // 赤色
+			case TimerState.LONG_BREAK: // 追加
+				return '#6c8e17'; // 長期休憩の背景色
 			default:
 				return '#17184b'; // 紺色
 		}
 	}, [timerState]);
+
+
+	const [theme, setTheme] = useState<Theme | null>(null);
 
 	useEffect(() => {
 		const backgroundColor = getBackgroundColor();
@@ -215,6 +276,15 @@ const App: React.FC = () => {
 		});
 		setTheme(newTheme);
 	}, [timerState, getBackgroundColor]);
+
+     const renderLongBreakRemaining = () => {
+          const remainingCycles = longBreakInterval - completedCycles;
+          return (
+               <>
+                    <p>長期休憩まであと: {remainingCycles} サイクル</p>
+               </>
+          );
+     };
 
 	return (
           <ThemeProvider theme={theme ? theme : createTheme()}>
@@ -248,6 +318,9 @@ const App: React.FC = () => {
                               <Typography variant="h4" style={{ color: getBackgroundColor() }}>
                                    {renderTimerState()}
                               </Typography>
+                              <Typography variant="h6" style={{ color: getBackgroundColor() }}>
+                                   {renderLongBreakRemaining()}
+                              </Typography>
                               <Grid container spacing={3} justifyContent="center" style={{ marginTop: '1em' }}>
                                    <Grid item xs={6}>
                                         <TextField
@@ -264,6 +337,24 @@ const App: React.FC = () => {
                                              type="number"
                                              value={breakTime / 60}
                                              onChange={handleBreakTimeChange}
+                                             fullWidth
+                                        />
+                                   </Grid>
+                                   <Grid item xs={6}>
+                                        <TextField
+                                             label="長時間休憩（分）"
+                                             type="number"
+                                             value={longBreakTime / 60}
+                                             onChange={handleLongBreakTimeChange}
+                                             fullWidth
+                                        />
+                                   </Grid>
+                                   <Grid item xs={6}>
+                                        <TextField
+                                             label="何回に一回長時間休憩"
+                                             type="number"
+                                             value={longBreakInterval}
+                                             onChange={handleLongBreakIntervalChange}
                                              fullWidth
                                         />
                                    </Grid>
